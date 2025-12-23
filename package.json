@@ -1,0 +1,290 @@
+{
+  "name": "routify",
+  "displayName": "routify",
+  "description": "Visualize and jump yo API route definitions instantly",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.107.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "routify",
+          "title": "Routify",
+          "icon": "resources/radar-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "routify": [
+        {
+          "id": "routifyView",
+          "name": "Routify",
+          "icon": "resources/radar-icon.svg",
+          "contextualTitle": "Routify"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "routify.refresh",
+        "title": "Refresh Routes",
+        "icon": "$(refresh)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.groupByFile",
+        "title": "Group by File",
+        "icon": "$(file)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.groupByMethod",
+        "title": "Group by HTTP Method",
+        "icon": "$(symbol-method)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.groupByPath",
+        "title": "Group by Path",
+        "icon": "$(folder)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.filterByMethod",
+        "title": "Filter by Method",
+        "icon": "$(filter)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.searchRoutes",
+        "title": "Search Routes",
+        "icon": "$(search)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.showStats",
+        "title": "Show Statistics",
+        "icon": "$(graph)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.navigateToRoute",
+        "title": "Go to Route Definition",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.copyPath",
+        "title": "Copy Route Path",
+        "icon": "$(copy)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.copyUrl",
+        "title": "Copy Full URL",
+        "icon": "$(link)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.clearCache",
+        "title": "Clear Cache",
+        "icon": "$(clear-all)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.testRoute",
+        "title": "Test Route (HTTP Request)",
+        "icon": "$(debug-start)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.copyCurl",
+        "title": "Copy as cURL",
+        "icon": "$(terminal)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.openInRestClient",
+        "title": "Open in REST Client",
+        "icon": "$(arrow-right)",
+        "category": "Routify"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "routify.refresh",
+          "when": "view == routifyView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "routify.searchRoutes",
+          "when": "view == routifyView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "routify.filterByMethod",
+          "when": "view == routifyView",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "routify.groupByFile",
+          "when": "view == routifyView",
+          "group": "2_grouping@1"
+        },
+        {
+          "command": "routify.groupByMethod",
+          "when": "view == routifyView",
+          "group": "2_grouping@2"
+        },
+        {
+          "command": "routify.groupByPath",
+          "when": "view == routifyView",
+          "group": "2_grouping@3"
+        },
+        {
+          "command": "routify.showStats",
+          "when": "view == routifyView",
+          "group": "3_stats@1"
+        },
+        {
+          "command": "routify.clearCache",
+          "when": "view == routifyView",
+          "group": "4_cache@1"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "routify.testRoute",
+          "when": "view == routifyView && viewItem == route",
+          "group": "test@1"
+        },
+        {
+          "command": "routify.copyCurl",
+          "when": "view == routifyView && viewItem == route",
+          "group": "copy@1"
+        },
+        {
+          "command": "routify.copyPath",
+          "when": "view == routifyView && viewItem == route",
+          "group": "copy@2"
+        },
+        {
+          "command": "routify.copyUrl",
+          "when": "view == routifyView && viewItem == route",
+          "group": "copy@3"
+        },
+        {
+          "command": "routify.openInRestClient",
+          "when": "view == routifyView && viewItem == route",
+          "group": "test@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Routify",
+      "properties": {
+        "routify.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically refresh routes when files change"
+        },
+        "routify.defaultGrouping": {
+          "type": "string",
+          "enum": ["file", "method", "path"],
+          "default": "file",
+          "description": "Default grouping mode for routes"
+        },
+        "routify.excludePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/build/**",
+            "**/.next/**",
+            "**/coverage/**",
+            "**/*.spec.{js,ts}",
+            "**/*.test.{js,ts}"
+          ],
+          "description": "Patterns to exclude from scanning"
+        },
+        "routify.includePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/*.js",
+            "**/*.ts"
+          ],
+          "description": "Patterns to include in scanning"
+        },
+        "routify.baseUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "Base URL for generating full route URLs"
+        },
+        "routify.enabledFrameworks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["express", "nestjs", "fastify"]
+          },
+          "default": ["express"],
+          "description": "Frameworks to scan for routes"
+        },
+        "routify.showMiddleware": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show middleware information in tooltips"
+        },
+        "routify.debugMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug logging"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run package",
+    "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/babel__traverse": "^7.28.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.107.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.27.1",
+    "eslint": "^9.39.1",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.48.1"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.28.5",
+    "@babel/traverse": "^7.28.5",
+    "@babel/types": "^7.28.5"
+  }
+}
