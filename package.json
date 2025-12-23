@@ -231,7 +231,7 @@
         "routify.baseUrl": {
           "type": "string",
           "default": "http://localhost:3000",
-          "description": "Base URL for generating full route URLs"
+          "description": "Base URL for testing routes (e.g., http://localhost:3000, http://localhost:4000). You can edit the URL directly in the test panel."
         },
         "routify.enabledFrameworks": {
           "type": "array",

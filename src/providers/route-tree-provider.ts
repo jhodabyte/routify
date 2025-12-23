@@ -89,24 +89,30 @@ export class RouteTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     const groups = new Map<string, RouteDefinition[]>();
 
     for (const route of routes) {
-      const fileName = path.basename(route.filePath);
-      if (!groups.has(fileName)) {
-        groups.set(fileName, []);
+      // Use controller name for NestJS routes, filename for Express routes
+      const groupName = route.controller || path.basename(route.filePath);
+      if (!groups.has(groupName)) {
+        groups.set(groupName, []);
       }
-      groups.get(fileName)!.push(route);
+      groups.get(groupName)!.push(route);
     }
 
-    return Array.from(groups.entries()).map(([fileName, routes]) => {
-      const node = new GroupNode(
-        fileName,
-        routes,
-        vscode.TreeItemCollapsibleState.Expanded
-      );
-      node.description = `${routes.length} route${routes.length > 1 ? "s" : ""}`;
-      node.tooltip = routes[0].filePath;
-      node.iconPath = new vscode.ThemeIcon("file");
-      return node;
-    });
+    return Array.from(groups.entries())
+      .sort((a, b) => a[0].localeCompare(b[0])) // Sort groups alphabetically
+      .map(([groupName, routes]) => {
+        const node = new GroupNode(
+          groupName,
+          routes,
+          vscode.TreeItemCollapsibleState.Expanded
+        );
+        node.description = `${routes.length} route${routes.length > 1 ? "s" : ""}`;
+        node.tooltip = routes[0].filePath;
+        // Use controller icon for NestJS, file icon for Express
+        node.iconPath = routes[0].controller
+          ? new vscode.ThemeIcon("symbol-class")
+          : new vscode.ThemeIcon("file");
+        return node;
+      });
   }
 
   private groupByMethod(routes: RouteDefinition[]): GroupNode[] {
@@ -119,16 +125,18 @@ export class RouteTreeProvider implements vscode.TreeDataProvider<TreeNode> {
       groups.get(route.method)!.push(route);
     }
 
-    return Array.from(groups.entries()).map(([method, routes]) => {
-      const node = new GroupNode(
-        method,
-        routes,
-        vscode.TreeItemCollapsibleState.Expanded
-      );
-      node.description = `${routes.length} route${routes.length > 1 ? "s" : ""}`;
-      node.iconPath = this.getMethodIcon(method);
-      return node;
-    });
+    return Array.from(groups.entries())
+      .sort((a, b) => a[0].localeCompare(b[0])) // Sort methods alphabetically
+      .map(([method, routes]) => {
+        const node = new GroupNode(
+          method,
+          routes,
+          vscode.TreeItemCollapsibleState.Expanded
+        );
+        node.description = `${routes.length} route${routes.length > 1 ? "s" : ""}`;
+        node.iconPath = this.getMethodIcon(method);
+        return node;
+      });
   }
 
   private groupByPath(routes: RouteDefinition[]): GroupNode[] {
@@ -142,16 +150,18 @@ export class RouteTreeProvider implements vscode.TreeDataProvider<TreeNode> {
       groups.get(basePath)!.push(route);
     }
 
-    return Array.from(groups.entries()).map(([basePath, routes]) => {
-      const node = new GroupNode(
-        basePath,
-        routes,
-        vscode.TreeItemCollapsibleState.Expanded
-      );
-      node.description = `${routes.length} route${routes.length > 1 ? "s" : ""}`;
-      node.iconPath = new vscode.ThemeIcon("folder");
-      return node;
-    });
+    return Array.from(groups.entries())
+      .sort((a, b) => a[0].localeCompare(b[0])) // Sort paths alphabetically
+      .map(([basePath, routes]) => {
+        const node = new GroupNode(
+          basePath,
+          routes,
+          vscode.TreeItemCollapsibleState.Expanded
+        );
+        node.description = `${routes.length} route${routes.length > 1 ? "s" : ""}`;
+        node.iconPath = new vscode.ThemeIcon("folder");
+        return node;
+      });
   }
 
   private extractBasePath(fullPath: string): string {
@@ -160,7 +170,18 @@ export class RouteTreeProvider implements vscode.TreeDataProvider<TreeNode> {
   }
 
   private getRoutesForGroup(group: GroupNode): RouteNode[] {
-    return group.routes.map((route) => {
+    // Sort routes alphabetically by method and path
+    const sortedRoutes = [...group.routes].sort((a, b) => {
+      // First sort by method
+      const methodCompare = a.method.localeCompare(b.method);
+      if (methodCompare !== 0) {
+        return methodCompare;
+      }
+      // Then sort by path
+      return a.path.localeCompare(b.path);
+    });
+
+    return sortedRoutes.map((route) => {
       const node = new RouteNode(route);
       node.parent = group;
       return node;
@@ -176,6 +197,7 @@ export class RouteTreeProvider implements vscode.TreeDataProvider<TreeNode> {
       PATCH: "wrench",
       OPTIONS: "question",
       HEAD: "info",
+      ALL: "symbol-method",
     };
 
     return new vscode.ThemeIcon(iconMap[method] || "symbol-method");
@@ -227,6 +249,7 @@ export class RouteNode extends TreeNode {
       PATCH: "info", // blue
       OPTIONS: "question",
       HEAD: "info",
+      ALL: "symbol-method",
     };
 
     return new vscode.ThemeIcon(colorMap[method] || "symbol-method");

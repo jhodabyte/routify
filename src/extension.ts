@@ -856,8 +856,6 @@ function log(message: string) {
     outputChannel.appendLine(logMessage);
   }
 
-  // Always log to console in development
-  console.log(`[Routify] ${logMessage}`);
 }
 
 export function deactivate() {

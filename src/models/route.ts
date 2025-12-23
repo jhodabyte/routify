@@ -7,7 +7,8 @@ export type HttpMethod =
   | "DELETE"
   | "PATCH"
   | "OPTIONS"
-  | "HEAD";
+  | "HEAD"
+  | "ALL";
 
 export type Framework = "express" | "nestjs" | "fastify" | "unknown";
 
@@ -29,6 +30,7 @@ export interface RouteDefinition {
   middleware?: string[];
   params?: RouteParam[];
   decorators?: string[];
+  controller?: string; // For NestJS - controller class name
 }
 
 export interface ParseResult {

@@ -4,16 +4,20 @@ import * as vscode from "vscode";
 import * as fs from "fs/promises";
 import { RouteDefinition } from "../models/route";
 import { ExpressParser } from "../parsers/express-parser";
+import { NestJSParser } from "../parsers/nestjs-parser";
+import { IParser } from "../parsers/base-parser";
 import {
   DEFAULT_EXCLUDE_PATTERNS,
   DEFAULT_INCLUDE_PATTERNS,
 } from "../utils/constants";
 
 export class WorkspaceScanner {
-  private parser: ExpressParser;
+  private parsers: IParser[];
 
   constructor() {
-    this.parser = new ExpressParser();
+    // Inicializar todos los parsers disponibles
+    // IMPORTANTE: NestJS debe ir ANTES de Express porque es más específico
+    this.parsers = [new NestJSParser(), new ExpressParser()];
   }
 
   /**
@@ -58,6 +62,7 @@ export class WorkspaceScanner {
       excludePatterns
     );
 
+
     // Escanear archivos
     const routes: RouteDefinition[] = [];
 
@@ -79,21 +84,14 @@ export class WorkspaceScanner {
       // Leer contenido del archivo
       const content = await fs.readFile(filePath, "utf-8");
 
-      // Verificar si el parser puede manejar este archivo
-      if (!this.parser.canParse(content, filePath)) {
-        return [];
+      for (const parser of this.parsers) {
+        if (parser.canParse(content, filePath)) {
+          const result = await parser.parse(content, filePath);
+          return result.routes;
+        }
       }
-
-      // Parsear el archivo
-      const result = await this.parser.parse(content, filePath);
-
-      if (result.errors.length > 0) {
-        console.error(`Errors parsing ${filePath}:`, result.errors);
-      }
-
-      return result.routes;
+      return [];
     } catch (error) {
-      console.error(`Error scanning file ${filePath}:`, error);
       return [];
     }
   }

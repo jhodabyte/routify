@@ -56,6 +56,7 @@ export class RequestPanel {
   }
 
   private async sendRequest(data: {
+    url: string;
     body: string;
     headers: { key: string; value: string }[];
     queryParams: { key: string; value: string }[];
@@ -64,9 +65,11 @@ export class RequestPanel {
     const http = await import("http");
     const url = await import("url");
 
-    // Build URL with query params
-    let fullUrl = `${this.baseUrl}${this.route.path}`;
-    if (data.queryParams.length > 0) {
+    // Use the URL from the webview (user can edit it)
+    let fullUrl = data.url;
+
+    // Add query params if they are not already in the URL
+    if (data.queryParams.length > 0 && !fullUrl.includes('?')) {
       const params = new URLSearchParams();
       data.queryParams.forEach((p) => {
         if (p.key) {
@@ -84,19 +87,30 @@ export class RequestPanel {
     const client = isHttps ? https : http;
 
     // Build headers
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
+    const headers: Record<string, string> = {};
 
+    // Add custom headers first
     data.headers.forEach((h) => {
-      if (h.key) {
+      if (h.key && h.value) {
         headers[h.key] = h.value;
       }
     });
 
+    // Add Content-Type if there's a body and it wasn't already set
+    if (data.body && !headers["Content-Type"] && !headers["content-type"]) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    // Add Content-Length if there's a body
+    if (data.body) {
+      const bodyBuffer = Buffer.from(data.body, 'utf-8');
+      headers["Content-Length"] = bodyBuffer.length.toString();
+    }
+
     const options = {
       method: this.route.method,
       headers,
+      timeout: 30000, // 30 second timeout
     };
 
     const startTime = Date.now();
@@ -117,7 +131,7 @@ export class RequestPanel {
           const parsed = JSON.parse(responseData);
           formattedBody = JSON.stringify(parsed, null, 2);
         } catch (e) {
-          // Not JSON
+          // Not JSON, keep as is
         }
 
         // Send response back to webview
@@ -125,11 +139,20 @@ export class RequestPanel {
           command: "response",
           data: {
             status: statusCode,
-            statusText: res.statusMessage,
+            statusText: res.statusMessage || `${statusCode}`,
             headers: res.headers,
-            body: formattedBody,
+            body: formattedBody || '(empty response)',
             duration,
             success: statusCode >= 200 && statusCode < 300,
+          },
+        });
+      });
+
+      res.on("error", (error) => {
+        this._panel.webview.postMessage({
+          command: "error",
+          data: {
+            message: `Response error: ${error.message}`,
           },
         });
       });
@@ -139,7 +162,17 @@ export class RequestPanel {
       this._panel.webview.postMessage({
         command: "error",
         data: {
-          message: error.message,
+          message: `Request error: ${error.message}. Make sure your server is running and the URL is correct.`,
+        },
+      });
+    });
+
+    req.on("timeout", () => {
+      req.destroy();
+      this._panel.webview.postMessage({
+        command: "error",
+        data: {
+          message: "Request timeout - server took too long to respond (30s)",
         },
       });
     });
@@ -250,6 +283,22 @@ export class RequestPanel {
             font-size: 13px;
             color: var(--vscode-textLink-foreground);
             font-weight: 500;
+        }
+
+        .url-input {
+            flex: 1;
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--vscode-input-foreground);
+            background: transparent;
+            border: none;
+            outline: none;
+            font-weight: 500;
+            padding: 0;
+        }
+
+        .url-input:focus {
+            color: var(--vscode-textLink-foreground);
         }
 
         .send-btn {
@@ -570,7 +619,7 @@ export class RequestPanel {
                 <span class="method ${this.route.method}">${this.route.method}</span>
                 <div class="url-container">
                     <span class="url-icon">🔗</span>
-                    <span class="url">${fullUrl}</span>
+                    <input type="text" id="url-input" class="url-input" value="${fullUrl}">
                 </div>
                 <button class="send-btn" onclick="sendRequest()">
                     <span>▶</span>
@@ -729,6 +778,8 @@ export class RequestPanel {
         }
 
         function sendRequest() {
+            const urlInput = document.getElementById('url-input');
+            const url = urlInput ? urlInput.value : '';
             const bodyEl = document.getElementById('body');
             const body = bodyEl ? bodyEl.value : '';
 
@@ -748,7 +799,7 @@ export class RequestPanel {
 
             vscode.postMessage({
                 command: 'sendRequest',
-                data: { body, headers, queryParams }
+                data: { url, body, headers, queryParams }
             });
         }
 
