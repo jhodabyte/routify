@@ -114,6 +114,24 @@
         "title": "Open in REST Client",
         "icon": "$(arrow-right)",
         "category": "Routify"
+      },
+      {
+        "command": "routify.exportToPostman",
+        "title": "Export All Routes to Postman Collection",
+        "icon": "$(export)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.exportGroupToPostman",
+        "title": "Export Group to Postman Collection",
+        "icon": "$(export)",
+        "category": "Routify"
+      },
+      {
+        "command": "routify.exportPostmanEnvironment",
+        "title": "Export Postman Environment",
+        "icon": "$(file)",
+        "category": "Routify"
       }
     ],
     "menus": {
@@ -157,6 +175,16 @@
           "command": "routify.clearCache",
           "when": "view == routifyView",
           "group": "4_cache@1"
+        },
+        {
+          "command": "routify.exportToPostman",
+          "when": "view == routifyView",
+          "group": "5_export@1"
+        },
+        {
+          "command": "routify.exportPostmanEnvironment",
+          "when": "view == routifyView",
+          "group": "5_export@2"
         }
       ],
       "view/item/context": [
@@ -184,6 +212,11 @@
           "command": "routify.openInRestClient",
           "when": "view == routifyView && viewItem == route",
           "group": "test@2"
+        },
+        {
+          "command": "routify.exportGroupToPostman",
+          "when": "view == routifyView && viewItem == group",
+          "group": "export@1"
         }
       ]
     },

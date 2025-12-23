@@ -4,10 +4,12 @@ import { RouteCodeLensProvider } from "./providers/route-codelens-provider";
 import { RequestPanel } from "./webview/request-panel";
 import { WorkspaceScanner } from "./services/workspace-scanner";
 import { RouteDefinition, HttpMethod } from "./models/route";
+import { PostmanExporter } from "./exporters/postman-exporter";
 
 let treeProvider: RouteTreeProvider;
 let codeLensProvider: RouteCodeLensProvider;
 let scanner: WorkspaceScanner;
+let postmanExporter: PostmanExporter;
 let fileWatcher: vscode.FileSystemWatcher | undefined;
 let outputChannel: vscode.OutputChannel;
 let statusBarItem: vscode.StatusBarItem;
@@ -17,7 +19,6 @@ export function activate(context: vscode.ExtensionContext) {
   outputChannel = vscode.window.createOutputChannel("Routify");
   log("Routify extension is now active");
 
-  // Initialize status bar item
   statusBarItem = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Right,
     100
@@ -26,12 +27,11 @@ export function activate(context: vscode.ExtensionContext) {
   statusBarItem.tooltip = "Click to view route statistics";
   context.subscriptions.push(statusBarItem);
 
-  // Initialize providers
   treeProvider = new RouteTreeProvider();
   codeLensProvider = new RouteCodeLensProvider();
   scanner = new WorkspaceScanner();
+  postmanExporter = new PostmanExporter();
 
-  // Register tree view
   const treeView = vscode.window.createTreeView("routifyView", {
     treeDataProvider: treeProvider,
     showCollapseAll: true,
@@ -39,7 +39,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(treeView);
 
-  // Register CodeLens provider for JS/TS files
   const codeLensDisposable = vscode.languages.registerCodeLensProvider(
     [
       { language: "javascript", scheme: "file" },
@@ -49,16 +48,12 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(codeLensDisposable);
 
-  // Register commands
   registerCommands(context);
 
-  // Initial scan
   scanWorkspace();
 
-  // Setup file watcher
   setupFileWatcher(context);
 
-  // Setup active editor listener
   setupActiveEditorListener(context);
 
   log("Routify is ready to scan routes");
@@ -453,8 +448,6 @@ ${frameworkStats}
       }
     )
   );
-
-  // Test route - Make HTTP request
   context.subscriptions.push(
     vscode.commands.registerCommand("routify.testRoute", async (node: any) => {
       if (!node?.route) {
@@ -466,7 +459,6 @@ ${frameworkStats}
       const baseUrl = config.get<string>("baseUrl", "http://localhost:3000");
       const fullUrl = `${baseUrl}${route.path}`;
 
-      // Show quick pick for request configuration
       const bodyInput =
         route.method === "POST" ||
         route.method === "PUT" ||
@@ -709,6 +701,57 @@ ${responseBody}
           vscode.window.showErrorMessage(`Error: ${error}`);
           log(`Quick test error: ${error}`);
         }
+      }
+    )
+  );
+
+  // Export all routes to Postman Collection
+  context.subscriptions.push(
+    vscode.commands.registerCommand("routify.exportToPostman", async () => {
+      const routes = await scanner.scanWorkspace();
+
+      if (routes.length === 0) {
+        vscode.window.showWarningMessage("No routes found to export");
+        return;
+      }
+
+      const workspaceName =
+        vscode.workspace.workspaceFolders?.[0]?.name || "API";
+      await postmanExporter.exportCollection(routes, workspaceName, workspaceName);
+      log(`Exported ${routes.length} routes to Postman collection`);
+    })
+  );
+
+  // Export controller/group to Postman Collection
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "routify.exportGroupToPostman",
+      async (node: any) => {
+        if (!node?.routes || !Array.isArray(node.routes)) {
+          vscode.window.showWarningMessage("No routes found in this group");
+          return;
+        }
+
+        const groupName = node.label || "Routes";
+        await postmanExporter.exportCollection(
+          node.routes,
+          groupName,
+          vscode.workspace.workspaceFolders?.[0]?.name
+        );
+        log(`Exported ${node.routes.length} routes from ${groupName} to Postman`);
+      }
+    )
+  );
+
+  // Export Postman Environment
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "routify.exportPostmanEnvironment",
+      async () => {
+        const workspaceName =
+          vscode.workspace.workspaceFolders?.[0]?.name || "API";
+        await postmanExporter.exportEnvironment(workspaceName);
+        log("Exported Postman environment");
       }
     )
   );

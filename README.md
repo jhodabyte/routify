@@ -6,9 +6,19 @@
 
 ### Intelligent AST-Based Scanning
 - Analyzes code structure using Babel AST parser
-- Detects HTTP methods (GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD) from Express framework
+- Detects HTTP methods (GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD) from Express and NestJS frameworks
 - Ignores comments and code within strings to avoid false positives
 - Supports both JavaScript and TypeScript
+
+### 🚀 Postman Collection Export (NEW!)
+- **Export entire API to Postman Collection v2.1** - One click to export all routes
+- **Export by controller/group** - Right-click any controller to export just that group
+- **Automatic request body examples** - Intelligent body generation based on endpoint type (login, register, user, product, etc.)
+- **Variables support** - Uses `{{baseUrl}}` and path variables like `{{id}}`
+- **Environment file generation** - Export Postman environment with baseUrl and token variables
+- **Auto-detects authentication** - Adds `Authorization: Bearer {{token}}` header for protected routes
+- **Organized by controllers** - Each controller becomes a folder in Postman
+- **Ready to use** - Import directly into Postman and start testing!
 
 ### Visual Route Map in Sidebar
 - Dedicated sidebar panel showing all detected routes hierarchically
@@ -87,6 +97,25 @@
 - Right-click any route
 - Select "Copy Route Path" or "Copy Full URL"
 
+### Export to Postman
+1. **Export all routes:**
+   - Click the export icon in the Routify panel toolbar
+   - Or use Command Palette: `Routify: Export All Routes to Postman Collection`
+   - Choose where to save the `.postman_collection.json` file
+   - Optionally export environment variables
+
+2. **Export a single controller:**
+   - Right-click any controller/group in the tree
+   - Select "Export Group to Postman Collection"
+   - Save the collection file
+
+3. **Import to Postman:**
+   - Open Postman
+   - Click "Import" button
+   - Select the exported `.postman_collection.json` file
+   - Optionally import the environment file
+   - All routes are ready to test!
+
 ## Extension Settings
 
 This extension contributes the following settings:
@@ -136,14 +165,19 @@ app.put('/update', [auth, validate], handler);
 - `Routify: Clear Cache` - Clear cache and refresh
 - `Routify: Copy Route Path` - Copy route path to clipboard
 - `Routify: Copy Full URL` - Copy full URL to clipboard
+- `Routify: Export All Routes to Postman Collection` - Export entire API to Postman
+- `Routify: Export Group to Postman Collection` - Export a controller/group to Postman
+- `Routify: Export Postman Environment` - Export environment variables for Postman
 
 ## Future Enhancements
 
-- Support for NestJS framework
+- ✅ ~~Support for NestJS framework~~ (DONE!)
+- ✅ ~~Export routes to Postman collection~~ (DONE!)
 - Support for Fastify framework
 - Advanced route grouping by modules/microservices
-- Export routes to various formats (JSON, Postman collection, OpenAPI)
-- Route testing integration
+- Export to OpenAPI/Swagger specification
+- Security analysis (detect unprotected endpoints)
+- Automatic test generation
 - Performance metrics per route
 
 ## Requirements
