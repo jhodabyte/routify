@@ -30,7 +30,7 @@ export interface RouteDefinition {
   middleware?: string[];
   params?: RouteParam[];
   decorators?: string[];
-  controller?: string; // For NestJS - controller class name
+  controller?: string;
 }
 
 export interface ParseResult {
